@@ -6,7 +6,50 @@ const token = process.env.TOKEN
 const guildId = process.env.GUILDID
 const clientId = process.env.CLIENTID
 
-const commands = [];
+const commands = [
+	{
+        name: 'add_task',
+        description: 'Add a new task with an optional deadline',
+        options: [
+            {
+                type: 3, // 3 is type STRING
+                name: 'task',
+                description: 'The task description',
+                required: true,
+            },
+            {
+                type: 3, // 3 is type STRING
+                name: 'deadline',
+                description: 'The deadline for the task (optional)',
+                required: false
+            }
+        ]
+    },
+
+					{
+						name: 'update_task',
+						description: 'Update an existing task',
+						options: [
+							{
+								type: 3, // STRING type
+								name: 'task_id',
+								description: 'The ID of the task to update',
+								required: true
+							}
+						]
+					},
+
+					{
+						name: 'to_do_list',
+						description: 'Lists all the tasks'
+					},
+
+					{
+						name: 'help',
+						description: 'Lists all available commands and their usage'
+					},
+
+];
 // Grab all the command folders from the commands directory you created earlier
 const foldersPath = join(__dirname, 'Commands');
 const commandFolders = readdirSync(foldersPath);
