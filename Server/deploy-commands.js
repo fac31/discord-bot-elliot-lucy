@@ -1,6 +1,14 @@
-import { REST, Routes } from 'discord.js';
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
+const dotenv = require('dotenv');
+const path = require('node:path');
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
+
+function configureEnv() {
+	const envPath = path.resolve(__dirname, '.env');
+	console.log('Loading environment variables from:', envPath);
+	const result = dotenv.config({ path: envPath });
+}
+configureEnv();
 
 const token = process.env.TOKEN
 const guildId = process.env.GUILDID
@@ -8,70 +16,80 @@ const clientId = process.env.CLIENTID
 
 const commands = [
 	{
-        name: 'add_task',
-        description: 'Add a new task with an optional deadline',
-        options: [
-            {
-                type: 3, // 3 is type STRING
-                name: 'task',
-                description: 'The task description',
-                required: true,
-            },
-            {
-                type: 3, // 3 is type STRING
-                name: 'deadline',
-                description: 'The deadline for the task (optional)',
-                required: false
-            }
-        ]
-    },
+		name: 'add_task',
+		description: 'Add a new task with an optional deadline',
+		options: [
+			{
+				type: 3, // 3 is type STRING
+				name: 'task',
+				description: 'The task description',
+				required: true,
+			},
+			{
+				type: 6, // USER
+				name: 'assignee',
+				description: 'The user to assign the task to',
+				required: true,
+			},
+			{
+				type: 3, // 3 is type STRING
+				name: 'deadline',
+				description: 'The deadline for the task (optional)',
+				required: false
+			}
+		]
+	},
 
-					{
-						name: 'update_task',
-						description: 'Update an existing task',
-						options: [
-							{
-								type: 3, // STRING type
-								name: 'task_id',
-								description: 'The ID of the task to update',
-								required: true
-							}
-						]
-					},
+	{
+		name: 'update_task',
+		description: 'Update an existing task',
+		options: [
+			{
+				type: 3, 
+				name: 'task_id',
+				description: 'The ID of the task to update',
+				required: true
+			}
+		]
+	},
 
-					{
-						name: 'to_do_list',
-						description: 'Lists all the tasks'
-					},
+	{
+		name: 'to_do_list',
+		description: 'Lists all the tasks'
+	},
+	{
+		name: 'your_to_do_list',
+		description: 'Lists all tasks assigned to that user'
+	},
 
-					{
-						name: 'help',
-						description: 'Lists all available commands and their usage'
-					},
+	{
+		name: 'help',
+		description: 'Lists all available commands and their usage'
+	},
+	{
+		name: 'code-review',
+		description: 'Allows users them to ask for code reviews',
+		options: [
+			{
+				type: 3,
+				name: 'github-link',
+				description: 'link for code-review',
+				required: true
+			},
+			{
+				type: 3, 
+				name: 'task_id',
+				description: 'The ID of the task to update',
+				required: true
+			}
+		]
+	},
+
 
 ];
-// Grab all the command folders from the commands directory you created earlier
-const foldersPath = join(__dirname, 'Commands');
-const commandFolders = readdirSync(foldersPath);
-
-for (const folder of commandFolders) {
-	// Grab all the command files from the commands directory you created earlier
-	const commandsPath = join(foldersPath, folder);
-	const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
-	for (const file of commandFiles) {
-		const filePath = join(commandsPath, file);
-		const command = require(filePath);
-		if ('data' in command && 'execute' in command) {
-			commands.push(command.data.toJSON());
-		} else {
-			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-		}
-	}
-}
 
 // Construct and prepare an instance of the REST module
-const rest = new REST().setToken(token);
+const rest = new REST({ version: '9' }).setToken(token);
 
 // and deploy your commands!
 (async () => {
