@@ -4,15 +4,19 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "node index.js deploy-commands.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "discord.js": "^14.14.1",
+    "@discordjs/rest": "^2.2.0",
+    "cors": "^2.8.5",
+    "discord-api-types": "^0.37.79",
+    "discord.js": "^13.0.1",
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.3.2",
     "openai": "^4.33.1"
-  },
-  "type": "module"
+  }
 }
