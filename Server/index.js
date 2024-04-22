@@ -1,5 +1,5 @@
 const path = require("path");
-const { Client, Collection, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = require("discord.js");
+const { Client, Collection, GatewayIntentBits, MessageButton, MessageSelectMenu } = require("discord.js");
 const dotenv = require("dotenv");
 const TaskData = require("./models/task.js");
 const CodeReviewData = require("./models/codeReview.js");
@@ -7,6 +7,8 @@ const TokenData = require("./models/tokens.js");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const axios = require('axios');
+
 const { google } = require("googleapis");
 const { v4: uuidv4 } = require("uuid");
 
@@ -54,9 +56,9 @@ const token = process.env.TOKEN;
 
 const client = new Client({
   intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.MESSAGE_CONTENT,
+    GatewayIntentBits.FLAGS.GUILDS,
+    GatewayIntentBits.FLAGS.GUILD_MESSAGES,
+    GatewayIntentBits.FLAGS.MESSAGE_CONTENT,
   ],
 });
 
@@ -499,37 +501,6 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-client.once("ready", (readyClient) => {
-  console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-});
-
-client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
-  const command = interaction.client.commands.get(interaction.commandName);
-
-  if (!command) {
-    console.error(`No command matching ${interaction.commandName} was found.`);
-    return;
-  }
-
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error(error);
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content: "There was an error while executing this command!",
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content: "There was an error while executing this command!",
-        ephemeral: true,
-      });
-    }
-  }
-});
-
 //  GOOGLE CALENDER API
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
@@ -672,6 +643,64 @@ client.on("interactionCreate", async (interaction) => {
     });
     const savedTokenData = tokenData.save();
   }
+});
+
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
+
+    const { commandName, options } = interaction;
+
+    if (commandName === 'ask_ai') {
+        const query = options.getString('query');
+        
+        try {
+            const response = await axios.post(
+                'https://api.openai.com/v1/engines/davinci-codex/completions',
+                {
+                    prompt: query,
+                    max_tokens: 150
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                    }
+                }
+            );
+
+            const aiResponse = response.data.choices[0].text.trim();
+            await interaction.reply({ content: aiResponse || 'I could not find an answer.', ephemeral: true });
+        } catch (error) {
+            console.error('Error calling OpenAI API:', error);
+            await interaction.reply({ content: 'Failed to fetch the response from AI.', ephemeral: true });
+        }
+    }
+});
+
+client.on('messageCreate', async message => {
+    if (message.channel.name === 'coding-help' && !message.author.bot) {
+        const query = message.content;
+        try {
+            const response = await axios.post(
+                'https://api.openai.com/v1/engines/davinci-codex/completions',
+                {
+                    prompt: query,
+                    max_tokens: 150
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                    }
+                }
+            );
+
+            const reply = response.data.choices[0].text.trim();
+            message.reply(reply);
+        } catch (error) {
+            console.error('Error calling OpenAI API:', error);
+            message.reply('Sorry, I could not retrieve an answer at this time.');
+        }
+    }
 });
 
 client.login(token);

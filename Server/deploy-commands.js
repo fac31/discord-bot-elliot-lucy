@@ -39,32 +39,30 @@ const commands = [
       },
     ],
   },
-
   {
     name: "add_meet",
     description: "Add a new meeting",
     options: [
       {
-        type: 3, 
+        type: 3,
         name: "summary",
         description: "The meeting summary",
         required: true,
       },
       {
-        type: 3, 
+        type: 3,
         name: "start-time",
         description: "Start time of the meeting (example: 5pm = 17:00:00)",
         required: true,
       },
       {
-        type: 3, 
+        type: 3,
         name: "end-time",
         description: "End time of the meeting (example: 10pm = 22:00:00)",
         required: true,
       },
     ],
   },
-
   {
     name: "update_task",
     description: "Update an existing task",
@@ -77,7 +75,6 @@ const commands = [
       },
     ],
   },
-
   {
     name: "to_do_list",
     description: "Lists all the tasks",
@@ -109,6 +106,18 @@ const commands = [
         type: 3,
         name: "task_id",
         description: "The ID of the task to update",
+        required: true,
+      },
+    ],
+  },
+  {
+    name: "ask_ai",
+    description: "Ask a question and get an answer from AI",
+    options: [
+      {
+        type: 3, // Type 3 is a STRING
+        name: "query",
+        description: "The question you want to ask",
         required: true,
       },
     ],
