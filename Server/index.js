@@ -56,9 +56,9 @@ const token = process.env.TOKEN;
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.FLAGS.GUILDS,
-    GatewayIntentBits.FLAGS.GUILD_MESSAGES,
-    GatewayIntentBits.FLAGS.MESSAGE_CONTENT,
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
   ],
 });
 
