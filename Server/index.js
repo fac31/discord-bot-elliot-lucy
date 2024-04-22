@@ -1,11 +1,12 @@
 const path = require('path');
-const { Client, Collection, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, MessageActionRow, MessageButton, MessageSelectMenu } = require('discord.js');
 const dotenv = require('dotenv');
 const TaskData = require('./models/task.js');
 const CodeReviewData = require('./models/github.js')
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const axios = require('axios');
 
 function configureEnv() {
     const envPath = path.resolve(__dirname, '.env');
@@ -29,9 +30,9 @@ const token = process.env.TOKEN;
 
 const client = new Client({
     intents: [
-        Intents.FLAGS.GUILDS,
-        Intents.FLAGS.GUILD_MESSAGES,
-        Intents.FLAGS.MESSAGE_CONTENT,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent 
     ],
 });
 
@@ -326,6 +327,63 @@ client.on('interactionCreate', async interaction => {
             await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
         } else {
             await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    }
+});
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
+
+    const { commandName, options } = interaction;
+
+    if (commandName === 'ask_ai') {
+        const query = options.getString('query');
+        
+        try {
+            const response = await axios.post(
+                'https://api.openai.com/v1/engines/davinci-codex/completions',
+                {
+                    prompt: query,
+                    max_tokens: 150
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                    }
+                }
+            );
+
+            const aiResponse = response.data.choices[0].text.trim();
+            await interaction.reply({ content: aiResponse || 'I could not find an answer.', ephemeral: true });
+        } catch (error) {
+            console.error('Error calling OpenAI API:', error);
+            await interaction.reply({ content: 'Failed to fetch the response from AI.', ephemeral: true });
+        }
+    }
+});
+
+client.on('messageCreate', async message => {
+    if (message.channel.name === 'coding-help' && !message.author.bot) {
+        const query = message.content;
+        try {
+            const response = await axios.post(
+                'https://api.openai.com/v1/engines/davinci-codex/completions',
+                {
+                    prompt: query,
+                    max_tokens: 150
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                    }
+                }
+            );
+
+            const reply = response.data.choices[0].text.trim();
+            message.reply(reply);
+        } catch (error) {
+            console.error('Error calling OpenAI API:', error);
+            message.reply('Sorry, I could not retrieve an answer at this time.');
         }
     }
 });

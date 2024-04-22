@@ -85,7 +85,16 @@ const commands = [
 		]
 	},
 
-
+	{
+        name: 'ask_ai',
+        description: 'Ask a question and get an answer from AI',
+        options: [{
+            type: 3, // Type 3 is a STRING
+            name: 'query',
+            description: 'The question you want to ask',
+            required: true
+        }]
+    }
 ];
 
 // Construct and prepare an instance of the REST module
