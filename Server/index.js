@@ -1,5 +1,5 @@
 const path = require("path");
-const { Client, Collection, GatewayIntentBits, MessageButton, MessageSelectMenu } = require("discord.js");
+const { Client, Collection, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = require("discord.js");
 const dotenv = require("dotenv");
 const TaskData = require("./models/task.js");
 const CodeReviewData = require("./models/codeReview.js");
@@ -55,12 +55,12 @@ app.use(express.json());
 const token = process.env.TOKEN;
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ],
-});
+    intents: [
+      Intents.FLAGS.GUILDS,
+      Intents.FLAGS.GUILD_MESSAGES,
+      Intents.FLAGS.MESSAGE_CONTENT
+    ],
+  });
 
 client.commands = new Collection();
 
@@ -655,20 +655,24 @@ client.on('interactionCreate', async interaction => {
         const query = options.getString('query');
         
         try {
-            const response = await axios.post(
-                'https://api.openai.com/v1/engines/davinci-codex/completions',
-                {
-                    prompt: query,
-                    max_tokens: 150
-                },
-                {
+            const response = await fetch(
+                'https://api.openai.com/v1/chat/completions', {
+                    method: "POST",
                     headers: {
-                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-                    }
+                      "Content-Type": "application/json",
+                      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                      model: 'gpt-3.5-turbo',
+                      messages: [{
+                        role: "user",
+                        content: query
+                      }]
+                    })
                 }
             );
-
-            const aiResponse = response.data.choices[0].text.trim();
+            const data =  await response.json()
+            const aiResponse = await data.choices[0].message.content;
             await interaction.reply({ content: aiResponse || 'I could not find an answer.', ephemeral: true });
         } catch (error) {
             console.error('Error calling OpenAI API:', error);
@@ -678,24 +682,28 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('messageCreate', async message => {
-    if (message.channel.name === 'coding-help' && !message.author.bot) {
+    if (message.channel.name === 'help' && !message.author.bot) {
         const query = message.content;
         try {
-            const response = await axios.post(
-                'https://api.openai.com/v1/engines/davinci-codex/completions',
-                {
-                    prompt: query,
-                    max_tokens: 150
-                },
-                {
+            const response = await fetch(
+                'https://api.openai.com/v1/chat/completions', {
+                    method: "POST",
                     headers: {
-                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-                    }
+                      "Content-Type": "application/json",
+                      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                      model: 'gpt-3.5-turbo',
+                      messages: [{
+                        role: "user",
+                        content: query
+                      }]
+                    })
                 }
             );
-
-            const reply = response.data.choices[0].text.trim();
-            message.reply(reply);
+            const data =  await response.json()
+            const aiResponse = await data.choices[0].message.content;
+            message.reply(aiResponse);
         } catch (error) {
             console.error('Error calling OpenAI API:', error);
             message.reply('Sorry, I could not retrieve an answer at this time.');
