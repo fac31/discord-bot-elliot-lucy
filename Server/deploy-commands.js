@@ -32,10 +32,35 @@ const commands = [
         required: true,
       },
       {
-        type: 3, // 3 is type STRING
+        type: 3,
         name: "deadline",
         description: "The deadline for the task (optional)",
         required: false,
+      },
+    ],
+  },
+
+  {
+    name: "add_meet",
+    description: "Add a new meeting",
+    options: [
+      {
+        type: 3, 
+        name: "summary",
+        description: "The meeting summary",
+        required: true,
+      },
+      {
+        type: 3, 
+        name: "start-time",
+        description: "Start time of the meeting (example: 5pm = 17:00:00)",
+        required: true,
+      },
+      {
+        type: 3, 
+        name: "end-time",
+        description: "End time of the meeting (example: 10pm = 22:00:00)",
+        required: true,
       },
     ],
   },
@@ -65,6 +90,10 @@ const commands = [
   {
     name: "help",
     description: "Lists all available commands and their usage",
+  },
+  {
+    name: "connect-google-calendar",
+    description: "Connect to your Google calender",
   },
   {
     name: "code-review",

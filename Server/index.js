@@ -1,19 +1,14 @@
 const path = require("path");
-const {
-  Client,
-  Collection,
-  Intents,
-  MessageActionRow,
-  MessageButton,
-  MessageSelectMenu,
-} = require("discord.js");
+const { Client, Collection, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = require("discord.js");
 const dotenv = require("dotenv");
 const TaskData = require("./models/task.js");
 const CodeReviewData = require("./models/codeReview.js");
+const TokenData = require("./models/tokens.js");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const { log } = require("console");
+const { google } = require("googleapis");
+const { v4: uuidv4 } = require("uuid");
 
 function configureEnv() {
   const envPath = path.resolve(__dirname, ".env");
@@ -25,10 +20,33 @@ configureEnv();
 const app = express();
 app.use(cors());
 
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT
+);
+
+const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+
+const authUrl = oauth2Client.generateAuthUrl({
+  access_type: "offline",
+  scope: SCOPES,
+});
+
+app.get("/auth/google", (req, res) => {
+  res.redirect(authUrl);
+});
+
 mongoose.connect(process.env.DATABASE_URL);
 const db = mongoose.connection;
 db.on("error", (error) => console.log(error));
 db.once("open", () => console.log("Connected to database"));
+app.listen(3000, () => {
+  console.log("Express server running on port 3000");
+  console.log(
+    "Authorize access to Google Calendar by visiting: http://localhost:3000/auth/google"
+  );
+});
 
 app.use(express.json());
 
@@ -299,13 +317,11 @@ async function reassignTaskAction(interaction, taskId) {
   const row = createAssigneeSelectMenu(assigneeOptions);
 
   try {
-    // Reply to the original interaction
     await interaction.reply({
       content: `Task ID: ${taskId}`,
       components: [row],
     });
 
-    // Create a collector for the select menu
     const selectCollector = createInteractionCollector(interaction, [
       "select_assignee",
     ]);
@@ -329,45 +345,50 @@ function createAssigneeSelectMenu(assigneeOptions) {
   );
 }
 
-async function handleAssigneeSelection(interaction, selectInteraction, taskId, assigneeOptions) {
-    const selectedAssigneeId = selectInteraction.values[0];
-    const selectedAssigneeUsername = assigneeOptions.find((option) => option.value === selectedAssigneeId)?.label;
+async function handleAssigneeSelection(
+  interaction,
+  selectInteraction,
+  taskId,
+  assigneeOptions
+) {
+  const selectedAssigneeId = selectInteraction.values[0];
+  const selectedAssigneeUsername = assigneeOptions.find(
+    (option) => option.value === selectedAssigneeId
+  )?.label;
 
-    try {
-        const taskData = await TaskData.findByIdAndUpdate(
-            taskId,
-            { assignee: selectedAssigneeUsername },
-            { new: true }
-        );
+  try {
+    const taskData = await TaskData.findByIdAndUpdate(
+      taskId,
+      { assignee: selectedAssigneeUsername },
+      { new: true }
+    );
 
-        const replyContent = `Task ${taskId} reassigned to ${taskData.assignee}.`;
+    const replyContent = `Task ${taskId} reassigned to ${taskData.assignee}.`;
 
-        // Check if the interaction has already been replied to
-        if (!interaction.deferred && !interaction.replied) {
-            // Reply to the interaction
-            await interaction.reply({
-                content: replyContent,
-                ephemeral: true,
-            });
-        } else {
-            // Update the existing reply
-            await interaction.editReply({
-                content: replyContent,
-                components: [],
-                ephemeral: true,
-            });
-        }
-    } catch (error) {
-        console.error("Error updating Assignee:", error);
-        await interaction.reply({
-            content: "An error occurred while reassigning the task. Please try again later.",
-            ephemeral: true,
-        });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.reply({
+        content: replyContent,
+        ephemeral: true,
+      });
+    } else {
+      await interaction.editReply({
+        content: replyContent,
+        components: [],
+        ephemeral: true,
+      });
     }
+  } catch (error) {
+    console.error("Error updating Assignee:", error);
+    await interaction.reply({
+      content:
+        "An error occurred while reassigning the task. Please try again later.",
+      ephemeral: true,
+    });
+  }
 }
 
 async function postHelpAction(interaction, taskId) {
-  const helpChannel = client.channels.cache.get("1231514334056812574");
+  const helpChannel = client.channels.cache.get("1231925121686704148");
   helpChannel.send(
     `${interaction.user.username} Needs help with Task ID: ${taskId}`
   );
@@ -378,7 +399,6 @@ async function postHelpAction(interaction, taskId) {
   });
 }
 
-// PRODUCTIVITY TOOLS
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -387,8 +407,6 @@ client.on("interactionCreate", async (interaction) => {
   if (commandName === "to_do_list") {
     try {
       const tasks = await TaskData.find({});
-      console.log(tasks);
-
       if (tasks.length > 0) {
         let taskList = "Here are all tasks on the to-do list:\n";
         tasks.forEach((task) => {
@@ -445,7 +463,6 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 // HELP
-
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -510,6 +527,150 @@ client.on("interactionCreate", async (interaction) => {
         ephemeral: true,
       });
     }
+  }
+});
+
+//  GOOGLE CALENDER API
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isCommand()) return;
+
+  const { commandName } = interaction;
+
+  if (commandName === "add_meet") {
+    const summary = interaction.options.getString("summary");
+    const startTime = interaction.options.getString("start-time");
+    const endTime = interaction.options.getString("end-time");
+
+    function getCurrentDateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}T`;
+    }
+
+    const currentDateTime = getCurrentDateTime();
+
+    const confirmationMessage = `Confirm Meet Details:\nSummary: ${summary}\nTime: ${startTime}-${endTime}`;
+    const confirmButton = new MessageActionRow().addComponents(
+      new MessageButton()
+        .setCustomId("confirm_add_meet")
+        .setLabel("Confirm")
+        .setStyle("SUCCESS"),
+      new MessageButton()
+        .setCustomId("cancel_add_meet")
+        .setLabel("Cancel")
+        .setStyle("DANGER")
+    );
+
+    await interaction.reply({
+      content: confirmationMessage,
+      components: [confirmButton],
+      ephemeral: true,
+    });
+
+    const filter = (i) =>
+      i.customId === "confirm_add_meet" || i.customId === "cancel_add_meet";
+    const collector = interaction.channel.createMessageComponentCollector({
+      filter,
+      time: 15000,
+    });
+
+    collector.on("collect", async (i) => {
+      const userId = i.user.id;
+      if (i.customId === "confirm_add_meet") {
+        try {
+          const event = {
+            summary: summary,
+            start: {
+              dateTime: currentDateTime + startTime,
+              timeZone: "Europe/London",
+            },
+            end: {
+              dateTime: currentDateTime + endTime,
+              timeZone: "Europe/London",
+            },
+            conferenceData: {
+              createRequest: {
+                requestId: uuidv4(),
+              },
+            },
+          };
+
+          const taskData = await TaskData.find({ userId });
+
+          console.log(taskData);
+
+          oauth2Client.setCredentials(taskData.tokens);
+
+          const calendar = google.calendar({
+            version: "v3",
+            auth: oauth2Client,
+          });
+
+          const meet = await calendar.events.insert({
+            calendarId: "primary",
+            requestBody: event,
+            conferenceDataVersion: 1,
+          });
+          await i.update({
+            content: "Google Meet Created!",
+            components: meet.data.hangoutLink,
+          });
+        } catch (error) {
+          console.log("Failed to create meet", error);
+        }
+      } else {
+        await i.update({ content: `Task addition cancelled.`, components: [] });
+      }
+    });
+
+    collector.on("end", (collected) =>
+      console.log(`Collected ${collected.size} interactions.`)
+    );
+  }
+
+  app.get("/auth/google/callback", async (req, res) => {
+    const code = req.query.code;
+
+    try {
+      const { tokens } = await oauth2Client.getToken(code);
+      oauth2Client.setCredentials(tokens);
+
+      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+      const { data } = await calendar.calendarList.list();
+
+      res.redirect("https://google.com");
+    } catch (error) {
+      console.error("Error exchanging code for tokens:", error);
+      res.status(500).send("Error exchanging code for tokens");
+    }
+  });
+});
+
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isCommand()) return;
+
+  const { commandName } = interaction;
+
+  if (commandName === "connect-google-calendar") {
+    const connectButton = new MessageActionRow().addComponents(
+      new MessageButton()
+        .setLabel("Connect Google Calendar")
+        .setStyle("LINK")
+        .setURL(authUrl)
+    );
+
+    await interaction.reply({
+      content: "Click the button below to connect your Google Calendar:",
+      components: [connectButton],
+      ephemeral: true,
+    });
+    const tokenData = new TokenData({
+      tokens: "hello",
+      userId: interaction.user.id,
+    });
+    const savedTokenData = tokenData.save();
   }
 });
 
