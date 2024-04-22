@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@discordjs/rest": "^2.2.0",
+    "axios": "^1.6.8",
     "cors": "^2.8.5",
     "discord-api-types": "^0.37.79",
     "discord.js": "^13.0.1",
