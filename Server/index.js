@@ -1,5 +1,12 @@
 const path = require("path");
-const { Client, Collection, Intents, MessageActionRow, MessageButton, MessageSelectMenu } = require("discord.js");
+const {
+  Client,
+  Collection,
+  Intents,
+  MessageActionRow,
+  MessageButton,
+  MessageSelectMenu,
+} = require("discord.js");
 const dotenv = require("dotenv");
 const TaskData = require("./models/task.js");
 const CodeReviewData = require("./models/codeReview.js");
@@ -7,7 +14,7 @@ const TokenData = require("./models/tokens.js");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const axios = require('axios');
+const axios = require("axios");
 
 const { google } = require("googleapis");
 const { v4: uuidv4 } = require("uuid");
@@ -55,12 +62,12 @@ app.use(express.json());
 const token = process.env.TOKEN;
 
 const client = new Client({
-    intents: [
-      Intents.FLAGS.GUILDS,
-      Intents.FLAGS.GUILD_MESSAGES,
-      Intents.FLAGS.MESSAGE_CONTENT
-    ],
-  });
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.MESSAGE_CONTENT,
+  ],
+});
 
 client.commands = new Collection();
 
@@ -185,9 +192,8 @@ client.on("interactionCreate", async (interaction) => {
             console.error("Code review channel not found.");
             return;
           }
-
           await codeReviewChannel.send(
-            `Code Review needed for Task ID: ${taskId}\nAssigned to ${task.assignee}\nGithub Link: [GitHub link](${githubLink})`
+            `Code Review needed for Task: ${task.description}\nAssigned to ${task.assignee}\nGithub Link: [GitHub link](${githubLink})`
           );
         } catch (error) {
           console.log("Failed to create Code Review", error);
@@ -465,41 +471,43 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 // HELP
-client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
 
-  const { commandName } = interaction;
+// I think this can be removed ?
 
-  if (commandName === "help") {
-    const commandDescriptions = [
-      {
-        name: "/add_task",
-        description:
-          "Add a new task with optional details such as deadline and assignee.",
-      },
-      {
-        name: "/update_task",
-        description:
-          "Update an existing task, mark as completed, reassign, or post for help.",
-      },
-      {
-        name: "/to_do_list",
-        description: "Lists all the tasks that have been added.",
-      },
-      {
-        name: "/help",
-        description: "Lists all available commands and their descriptions.",
-      },
-    ];
+// client.on("interactionCreate", async (interaction) => {
+//   if (!interaction.isCommand()) return;
+//   const { commandName } = interaction;
 
-    let helpMessage = "Here are the commands you can use:\n";
-    commandDescriptions.forEach((cmd) => {
-      helpMessage += `**${cmd.name}** - ${cmd.description}\n`;
-    });
+//   if (commandName === "help") {
+//     const commandDescriptions = [
+//       {
+//         name: "/add_task",
+//         description:
+//           "Add a new task with optional details such as deadline and assignee.",
+//       },
+//       {
+//         name: "/update_task",
+//         description:
+//           "Update an existing task, mark as completed, reassign, or post for help.",
+//       },
+//       {
+//         name: "/to_do_list",
+//         description: "Lists all the tasks that have been added.",
+//       },
+//       {
+//         name: "/help",
+//         description: "Lists all available commands and their descriptions.",
+//       },
+//     ];
 
-    await interaction.reply({ content: helpMessage, ephemeral: true });
-  }
-});
+//     let helpMessage = "Here are the commands you can use:\n";
+//     commandDescriptions.forEach((cmd) => {
+//       helpMessage += `**${cmd.name}** - ${cmd.description}\n`;
+//     });
+
+//     await interaction.reply({ content: helpMessage, ephemeral: true });
+//   }
+// });
 
 //  GOOGLE CALENDER API
 client.on("interactionCreate", async (interaction) => {
@@ -645,70 +653,81 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isCommand()) return;
 
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isCommand()) return;
+  const { commandName, options } = interaction;
 
-    const { commandName, options } = interaction;
+  if (commandName === "ask_ai") {
+    const query = options.getString("query");
 
-    if (commandName === 'ask_ai') {
-        const query = options.getString('query');
-        
-        try {
-            const response = await fetch(
-                'https://api.openai.com/v1/chat/completions', {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                      model: 'gpt-3.5-turbo',
-                      messages: [{
-                        role: "user",
-                        content: query
-                      }]
-                    })
-                }
-            );
-            const data =  await response.json()
-            const aiResponse = await data.choices[0].message.content;
-            await interaction.reply({ content: aiResponse || 'I could not find an answer.', ephemeral: true });
-        } catch (error) {
-            console.error('Error calling OpenAI API:', error);
-            await interaction.reply({ content: 'Failed to fetch the response from AI.', ephemeral: true });
+    try {
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "user",
+                content: query,
+              },
+            ],
+          }),
         }
+      );
+      const data = await response.json();
+      const aiResponse = await data.choices[0].message.content;
+      await interaction.reply({
+        content: aiResponse || "I could not find an answer.",
+        ephemeral: true,
+      });
+    } catch (error) {
+      console.error("Error calling OpenAI API:", error);
+      await interaction.reply({
+        content: "Failed to fetch the response from AI.",
+        ephemeral: true,
+      });
     }
+  }
 });
 
-client.on('messageCreate', async message => {
-    if (message.channel.name === 'help' && !message.author.bot) {
-        const query = message.content;
-        try {
-            const response = await fetch(
-                'https://api.openai.com/v1/chat/completions', {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                      model: 'gpt-3.5-turbo',
-                      messages: [{
-                        role: "user",
-                        content: query
-                      }]
-                    })
-                }
-            );
-            const data =  await response.json()
-            const aiResponse = await data.choices[0].message.content;
-            message.reply(aiResponse);
-        } catch (error) {
-            console.error('Error calling OpenAI API:', error);
-            message.reply('Sorry, I could not retrieve an answer at this time.');
+client.on("messageCreate", async (message) => {
+  if (message.channel.name === "help" && !message.author.bot) {
+    const query = message.content;
+    try {
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [
+              {
+                role: "user",
+                content: query,
+              },
+            ],
+          }),
         }
+      );
+      const data = await response.json();
+      const aiResponse = await data.choices[0].message.content;
+      message.reply(aiResponse);
+    } catch (error) {
+      console.error("Error calling OpenAI API:", error);
+      message.reply("Sorry, I could not retrieve an answer at this time.");
     }
+  }
 });
 
 client.login(token);
