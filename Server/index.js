@@ -1,17 +1,18 @@
 const path = require("path");
-const { Client, Collection, Intents } = require("discord.js");
+const { Client, Collection, Intents, MessageActionRow, MessageButton } = require("discord.js");
 const dotenv = require("dotenv");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const { google } = require("googleapis");
-const addTaskInteraction = require('./events/addTask.js')
-const codeReviewInteraction = require('./events/codeReview.js')
-const updateTaskInteraction = require('./events/updateTask.js')
-const toDoListsInteractions =  require('./events/toDoLists.js')
-const addMeetingInteraction = require('./events/addMeeting.js')
-const connectGoogleCalendarIntercation = require('./events/connectGoogleCalendar.js')
-const askAiInteraction = require('./events/askAi.js')
+const TokenData = require("./models/tokens.js");
+const addTaskInteraction = require("./events/addTask.js");
+const codeReviewInteraction = require("./events/codeReview.js");
+const updateTaskInteraction = require("./events/updateTask.js");
+const toDoListsInteractions = require("./events/toDoLists.js");
+const addMeetingInteraction = require("./events/addMeeting.js");
+const connectGoogleCalendarIntercation = require("./events/connectGoogleCalendar.js");
+const askAiInteraction = require("./events/askAi.js");
 const openAiChatbotInteraction = require("./events/openAiChatbot.js");
 
 function configureEnv() {
@@ -30,7 +31,7 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_REDIRECT
 );
 
-const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
 const authUrl = oauth2Client.generateAuthUrl({
   access_type: "offline",
@@ -68,44 +69,75 @@ client.commands = new Collection();
 
 // TASK MANAGEMENT
 
-addTaskInteraction(client)
-codeReviewInteraction(client)
+addTaskInteraction(client);
+codeReviewInteraction(client);
 
 // TASK TRACKING
 
-updateTaskInteraction(client)
-toDoListsInteractions(client)
-
+updateTaskInteraction(client);
+toDoListsInteractions(client);
 
 //  GOOGLE CALENDER
 
-addMeetingInteraction(client, oauth2Client)
-connectGoogleCalendarIntercation(client)
+addMeetingInteraction(client, oauth2Client);
+connectGoogleCalendarIntercation(client, authUrl);
 
 // OPEN AI
 
-askAiInteraction(client)
-openAiChatbotInteraction(client)
+askAiInteraction(client);
+openAiChatbotInteraction(client);
 
 //  GOOGLE CALENDER API
 
-  app.get("/auth/google/callback", async (req, res) => {
-    const code = req.query.code;
+app.get("/auth/google/callback", async (req, res) => {
+  const code = req.query.code;
+ 
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
 
-    try {
-      const { tokens } = await oauth2Client.getToken(code);
-      oauth2Client.setCredentials(tokens);
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const { data } = await calendar.calendarList.list();
 
-      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-      const { data } = await calendar.calendarList.list();
+    const channel = await client.channels.fetch('1231149569342181439');
 
-      res.redirect("https://google.com");
-    } catch (error) {
-      console.error("Error exchanging code for tokens:", error);
-      res.status(500).send("Error exchanging code for tokens");
-    }
+        const button = new MessageButton()
+      .setStyle("PRIMARY")
+      .setLabel("Click me") 
+      .setCustomId("my_button"); 
+
+    const row = new MessageActionRow().addComponents(button);
+
+    const message = await channel.send({
+      content: "Click below to confirm Google calendar connection:",
+      components: [row],
+    });
+
+    client.on("interactionCreate", async (interaction) => {
+      if (
+        interaction.isButton() &&
+        interaction.customId === "my_button" &&
+        interaction.message.id === message.id
+      ) {
+        const userId = interaction.user.id;
+        console.log("User ID:", userId);
+      
+
+    const tokenData = new TokenData({
+      tokens: tokens,
+      userID: userId
+    });
+    await tokenData.save();
+    await interaction.message.delete();
+  }
   });
+    res.status(200).send("<h1>Authentication successful!</h1>");
+  } catch (error) {
+    console.error("Error exchanging code for tokens:", error);
+    res.status(500).send("Error exchanging code for tokens");
+  }
+});
 
 client.login(token);
 
-module.exports = client
+module.exports = client;
