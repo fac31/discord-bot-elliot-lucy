@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 
 const tokenSchema = new mongoose.Schema({
     tokens: {
-        type: String,
+        type: Object,
         required: true
     },
     userID: {
