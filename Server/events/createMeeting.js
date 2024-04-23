@@ -9,10 +9,11 @@ const addMeeting = (client, oauth2Client) => {
 
     const { commandName } = interaction;
 
-    if (commandName === "add_meeting") {
+    if (commandName === "create_meeting") {
       const summary = interaction.options.getString("summary");
       const startTime = interaction.options.getString("start-time");
       const endTime = interaction.options.getString("end-time");
+      const assignee = interaction.options.getUser("assignee");
 
       function getCurrentDateTime() {
         const now = new Date();
@@ -24,7 +25,7 @@ const addMeeting = (client, oauth2Client) => {
 
       const currentDateTime = getCurrentDateTime();
 
-      const confirmationMessage = `Confirm Meet Details:\nSummary: ${summary}\nTime: ${startTime}-${endTime}`;
+      const confirmationMessage = `Confirm Meet Details:\nSummary: ${summary}\nTime: ${startTime}-${endTime}\nAttendees: ${assignee.username}`;
       const confirmButton = new MessageActionRow().addComponents(
         new MessageButton()
           .setCustomId("confirm_add_meet")
@@ -49,11 +50,37 @@ const addMeeting = (client, oauth2Client) => {
         time: 15000,
       });
 
+      const attendee = await TokenData.findOne({ userID: assignee.id })
+
+      console.log(attendee);
+      
       collector.on("collect", async (i) => {
         const userId = i.user.id;
         if (i.customId === "confirm_add_meet") {
-          try {
-            const event = {
+
+          const eventMaker = (attendee) => {
+          let event
+          if (attendee) { 
+             event = {
+              summary: summary,
+              start: {
+                dateTime: currentDateTime + startTime,
+                timeZone: "Europe/London",
+              },
+              end: {
+                dateTime: currentDateTime + endTime,
+                timeZone: "Europe/London",
+              },
+              attendees: [{ email: attendee.userEmail }],
+              conferenceData: {
+                createRequest: {
+                  requestId: uuidv4(),
+                },
+              },
+            };
+            return event
+          } else {
+             event = {
               summary: summary,
               start: {
                 dateTime: currentDateTime + startTime,
@@ -69,7 +96,14 @@ const addMeeting = (client, oauth2Client) => {
                 },
               },
             };
+            return event
+          }
+        }
 
+        const event = eventMaker(attendee)
+        console.log(event);
+
+          try {
             const tokenData = await TokenData.find({ userID: userId });
 
             oauth2Client.setCredentials(tokenData[0].tokens);
@@ -84,6 +118,16 @@ const addMeeting = (client, oauth2Client) => {
               requestBody: event,
               conferenceDataVersion: 1,
             });
+
+            try {
+              const user = await client.users.fetch(assignee.id);
+              console.log(user);
+              await user.send(
+                `${interaction.user.username} has invited you to a new meeting: ${meet.data.hangoutLink}`
+              );
+            } catch (error) {
+              console.error(`Failed to send DM to user ${assignee.id}:`, error);
+            }
             const meetButton = new MessageButton()
               .setStyle("LINK")
               .setLabel("Google Meet Link")
