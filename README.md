@@ -4,39 +4,40 @@
 ## Made using Node and Express by Elliot and Lucy as part of the Founders and Coders course
 
 ### What the Bot can do 
+<img width="400" alt="Screenshot 2024-04-24 at 16 38 09" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/6d72dd6d-ed8d-4d8b-be80-d8d648d98a96">
 
 The Bot enables Developers to do the following:
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 28 07" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/6ff4ea5e-1f3c-4403-a349-c6bf8f8bdd17">
+##/Add Task
 
 Add a Task to their To Do list, stored on MongoDB. Users have the option to add a:
 1. Description of the Task
 2. Assign it to a Team Member
 3. Set a Deadline
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 29 39" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/ffe98962-a85d-43d6-ad07-ee1be6393e3f">
+##/Update Task
 Change the Status of a Task on the To Do list:
 1. Mark as completed
 2. Re-assign to another Team Member
 3. Post to coding-help channel
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 30 33" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/648e74ef-b9c2-40d3-8078-1cb4d10f66ec">
+##/To Do List
 Lists all the tasks entered into the database for everybody on the team
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 31 05" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/6fee2a7d-b5fa-4ea8-8ae4-0716bb3bc690">
+##/Your To Do List
 Lists all the tasks entered into the database for the user who requests their To Do List
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 28 16" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/7faeefaa-6a0f-4563-9a7e-4ca8dfd5fa11">
+##/Ask AI
 1. Enables Developers to access the OpenAI API and ask for coding help
 2. Also included as a feature within the coding-help channel, to enable Users to ask AI to solve their problems.
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 28 22" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/55030948-ffa5-447f-a38d-b67af928ae7e">
+##/Code Review
 Enables a User to post a GitHub link and ask for a code review
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 32 36" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/87e18f21-7ac5-4f5f-a25d-be106ac50725">
+Connect Google Calendar
 Enables a User to attach to their google calendar so that they can keep track of meetings 
 
-<img width="200" alt="Screenshot 2024-04-24 at 16 28 29" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/819f21e6-97b7-491d-889a-3b68a2ead482">
+Create Meeting
 Enables a User to set up a meeting 
 
 ### Prerequisites
