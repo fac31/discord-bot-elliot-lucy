@@ -1,7 +1,7 @@
 # Discord Chatbot 🤖💬
 
 ## A Discord Chatbot for Developers to assist in managing their workflow
-## Made by Elliot and Lucy as part of the Founders and Coders course
+## Made using Node and Express by Elliot and Lucy as part of the Founders and Coders course
 
 ### What the Bot can do 
 
@@ -19,15 +19,25 @@ Change the Status of a Task on the To Do list:
 2. Re-assign to another Team Member
 3. Post to coding-help channel
 
-/Help
-Lists all available Commands 
-
 /To Do List 
-Lists all the tasks entered into the database
+Lists all the tasks entered into the database for everybody on the team
+
+/Your To Do List
+Lists all the tasks entered into the database for the user who requests their To Do List
 
 /AskAI
 1. Enables Developers to access the OpenAI API and ask for coding help
 2. Also included as a feature within the coding-help channel, to enable Users to ask AI to solve their problems.
+
+/Code Review
+Enables a User to post a GitHub link and ask for a code review
+
+/Connect Google Calendar
+Enables a User to attach to their google calendar so that they can keep track of meetings 
+
+/Add Meeting
+Enables a User to set up a meeting 
+
 
 ### Prerequisites
 
@@ -35,7 +45,7 @@ To get this bot working, we need access to the following:
 
 - **Server ID of a guild** 
 - **Token of a Discord bot** 
-- **An OpenAI Key** 
+- **An OpenAI Key**
 
 #### Guild Server ID
 
