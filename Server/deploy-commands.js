@@ -69,8 +69,8 @@ const commands = [
     options: [
       {
         type: 3,
-        name: "task_id",
-        description: "The ID of the task to update",
+        name: "task_description",
+        description: "Description of the task to update",
         required: true,
       },
     ],

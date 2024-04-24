@@ -1,5 +1,5 @@
 const path = require("path");
-const { Client, Collection, Intents, MessageActionRow, MessageButton } = require("discord.js");
+const { Client, Collection, Intents, MessageEmbed, MessageActionRow, MessageButton } = require("discord.js");
 const dotenv = require("dotenv");
 const express = require("express");
 const cors = require("cors");
