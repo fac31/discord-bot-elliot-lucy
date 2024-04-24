@@ -1,4 +1,4 @@
-const { Client, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu } = require("discord.js");
+const { Client, MessageEmbed, MessageActionRow, MessageSelectMenu } = require("discord.js");
 const TaskData = require("../models/task.js");
 
 const updateTask = (client) => {
@@ -13,26 +13,28 @@ const updateTask = (client) => {
             return;
         }
 
-        const taskEmbed = new MessageEmbed()
-            .setColor('#36454F')
-            .setTitle('Task Update Actions')
-            .setDescription(`**Description:** ${task.description}\n**Assigned to:** ${task.assignee}\n**Deadline:** ${task.deadline}`)
-            .setFooter('Select an action to perform');
-
         const row = new MessageActionRow().addComponents(
-            new MessageButton()
-                .setCustomId("complete_task")
-                .setLabel("Complete Task")
-                .setStyle("SUCCESS"),
-            new MessageButton()
-                .setCustomId("reassign_task")
-                .setLabel("Reassign Task")
-                .setStyle("PRIMARY"),
-            new MessageButton()
-                .setCustomId("post_help")
-                .setLabel("Post to Help Channel")
-                .setStyle("SECONDARY")
-        );
+          new MessageSelectMenu()
+              .setCustomId("task_action")
+              .setPlaceholder("Select an action")
+              .addOptions([
+                  {
+                      label: "Complete Task",
+                      description: "Mark the task as completed and remove it.",
+                      value: "complete_task"
+                  },
+                  {
+                      label: "Reassign Task",
+                      description: "Assign the task to a different member.",
+                      value: "reassign_task"
+                  },
+                  {
+                      label: "Post to Help Channel",
+                      description: "Ask for help in the help channel.",
+                      value: "post_help"
+                  }
+              ])
+      );
 
         await interaction.reply({
             embeds: [taskEmbed],
@@ -44,19 +46,19 @@ const updateTask = (client) => {
         const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
 
         collector.on("collect", async (i) => {
-            switch (i.customId) {
-                case "complete_task":
-                    await completeTaskAction(i, task._id);
-                    break;
-                case "reassign_task":
-                    await reassignTaskAction(i, task);
-                    break;
-                case "post_help":
-                    await postHelpAction(i, task);
-                    break;
-            }
-            collector.stop();
-        });
+          await i.deferUpdate();
+          switch (i.values[0]) { // values is an array, take the first selected option
+              case "complete_task":
+                  await completeTaskAction(i, task._id);
+                  break;
+              case "reassign_task":
+                  await reassignTaskAction(i, task);
+                  break;
+              case "post_help":
+                  await postHelpAction(i, task);
+                  break;
+          }
+      });
 
         collector.on("end", (collected) => console.log(`Collected ${collected.size} interactions.`));
     });
