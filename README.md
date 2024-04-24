@@ -4,34 +4,34 @@
 ## Made using Node and Express by Elliot and Lucy as part of the Founders and Coders course
 
 ### What the Bot can do 
-<img width="400" alt="Screenshot 2024-04-24 at 16 38 09" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/6d72dd6d-ed8d-4d8b-be80-d8d648d98a96">
+<img width="200" alt="Screenshot 2024-04-24 at 16 38 09" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/6d72dd6d-ed8d-4d8b-be80-d8d648d98a96">
 
 The Bot enables Developers to do the following:
 
-##/Add Task
+## /Add Task
 
 Add a Task to their To Do list, stored on MongoDB. Users have the option to add a:
 1. Description of the Task
 2. Assign it to a Team Member
 3. Set a Deadline
 
-##/Update Task
+## /Update Task
 Change the Status of a Task on the To Do list:
 1. Mark as completed
 2. Re-assign to another Team Member
 3. Post to coding-help channel
 
-##/To Do List
+## /To Do List
 Lists all the tasks entered into the database for everybody on the team
 
-##/Your To Do List
+## /Your To Do List
 Lists all the tasks entered into the database for the user who requests their To Do List
 
-##/Ask AI
+## /Ask AI
 1. Enables Developers to access the OpenAI API and ask for coding help
 2. Also included as a feature within the coding-help channel, to enable Users to ask AI to solve their problems.
 
-##/Code Review
+## /Code Review
 Enables a User to post a GitHub link and ask for a code review
 
 Connect Google Calendar
