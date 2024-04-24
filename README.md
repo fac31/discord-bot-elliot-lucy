@@ -1,9 +1,8 @@
 # Discord Chatbot 🤖💬
 
-## A Discord Chatbot for Developers to assist in managing their workflow
 ## Made using Node and Express by Elliot and Lucy as part of the Founders and Coders course
 
-### What the Bot can do 
+### The Bot assists Developers to manage their collaborative workflow
 <img width="200" alt="Screenshot 2024-04-24 at 16 38 09" src="https://github.com/fac31/discord-bot-elliot-lucy/assets/154347220/6d72dd6d-ed8d-4d8b-be80-d8d648d98a96">
 
 The Bot enables Developers to do the following:
