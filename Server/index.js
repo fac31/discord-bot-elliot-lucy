@@ -10,7 +10,7 @@ const addTaskInteraction = require("./events/addTask.js");
 const codeReviewInteraction = require("./events/codeReview.js");
 const updateTaskInteraction = require("./events/updateTask.js");
 const toDoListsInteractions = require("./events/toDoLists.js");
-const addMeetingInteraction = require("./events/addMeeting.js");
+const addMeetingInteraction = require("./events/createMeeting.js");
 const connectGoogleCalendarIntercation = require("./events/connectGoogleCalendar.js");
 const askAiInteraction = require("./events/askAi.js");
 const openAiChatbotInteraction = require("./events/openAiChatbot.js");
@@ -99,6 +99,8 @@ app.get("/auth/google/callback", async (req, res) => {
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
     const { data } = await calendar.calendarList.list();
 
+    console.log({data: data.items, code: code});
+
     const channel = await client.channels.fetch('1231149569342181439');
 
         const button = new MessageButton()
@@ -125,7 +127,8 @@ app.get("/auth/google/callback", async (req, res) => {
 
     const tokenData = new TokenData({
       tokens: tokens,
-      userID: userId
+      userID: userId,
+      userEmail: data.items[0].id
     });
     await tokenData.save();
     await interaction.message.delete();

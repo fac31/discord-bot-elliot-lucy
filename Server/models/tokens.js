@@ -7,7 +7,11 @@ const tokenSchema = new mongoose.Schema({
     },
     userID: {
         type: String,
-        default: '0000000000'
+        required: true
+    },
+    userEmail: {
+        type: String,
+        required: true
     }
 });
 
