@@ -1,3 +1,5 @@
+const { MessageEmbed } = require("discord.js");
+
 const askAi = (client) => {
     client.on("interactionCreate", async (interaction) => {
         if (!interaction.isCommand()) return;
@@ -29,14 +31,26 @@ const askAi = (client) => {
             );
             const data = await response.json();
             const aiResponse = await data.choices[0].message.content;
+
+            const aiEmbed = new MessageEmbed()
+                    .setColor('#36454F') 
+                    .setTitle('AI Response')
+                    .setDescription(aiResponse || "I could not find an answer.")
+                    .setFooter('Response provided by OpenAI');
+
             await interaction.reply({
-              content: aiResponse || "I could not find an answer.",
+              embeds: [aiEmbed], 
               ephemeral: true,
             });
           } catch (error) {
             console.error("Error calling OpenAI API:", error);
+            const errorEmbed = new MessageEmbed()
+                    .setColor('#ff0000') 
+                    .setTitle('Error')
+                    .setDescription("Failed to fetch the response from AI.");
+
             await interaction.reply({
-              content: "Failed to fetch the response from AI.",
+              embeds: [errorEmbed],
               ephemeral: true,
             });
           }

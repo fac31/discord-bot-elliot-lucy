@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageButton } = require("discord.js");
+const { MessageActionRow, MessageButton, MessageEmbed } = require("discord.js");
 const TokenData = require("../models/tokens.js");
 const { v4: uuidv4 } = require("uuid");
 const { google } = require("googleapis");
@@ -24,7 +24,15 @@ const addMeeting = (client, oauth2Client) => {
 
       const currentDateTime = getCurrentDateTime();
 
-      const confirmationMessage = `Confirm Meet Details:\nSummary: ${summary}\nTime: ${startTime}-${endTime}`;
+      const confirmationEmbed = new MessageEmbed()
+        .setColor('#36454F') 
+        .setTitle('Confirm Meeting Details')
+        .setDescription('Please review the meeting details below and confirm:')
+        .addField('Summary', summary, false)
+        .addField('Start Time', currentDateTime + startTime, true)
+        .addField('End Time', currentDateTime + endTime, true);
+
+       
       const confirmButton = new MessageActionRow().addComponents(
         new MessageButton()
           .setCustomId("confirm_add_meet")
@@ -37,7 +45,7 @@ const addMeeting = (client, oauth2Client) => {
       );
 
       await interaction.reply({
-        content: confirmationMessage,
+        embeds: [confirmationEmbed],
         components: [confirmButton],
         ephemeral: true,
       });
@@ -93,6 +101,7 @@ const addMeeting = (client, oauth2Client) => {
 
             await i.update({
               content: "Google Meet Created!",
+              embeds: [],
               components: [meetRow],
             });
           } catch (error) {
@@ -100,7 +109,7 @@ const addMeeting = (client, oauth2Client) => {
           }
         } else {
           await i.update({
-            content: `Task addition cancelled.`,
+            content: `Meeting addition cancelled.`,
             components: [],
           });
         }
